@@ -1,0 +1,133 @@
+{% extends 'FA01/base.html' %}
+
+{% block title %}Mi Perfil - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Mi Perfil</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Usuario</label>
+                                <input type="text" class="form-control" value="{{ user.username }}" disabled>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Correo Electrónico</label>
+                                <input type="email" class="form-control" value="{{ user.email }}" disabled>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="department" class="form-label">Departamento</label>
+                                <input type="text" class="form-control" id="department" name="department" value="{{ profile.department|default:'' }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="position" class="form-label">Cargo</label>
+                                <input type="text" class="form-control" id="position" name="position" value="{{ profile.position|default:'' }}" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="extension" class="form-label">Extensión</label>
+                            <input type="text" class="form-control" id="extension" name="extension" value="{{ profile.extension|default:'' }}">
+                        </div>
+
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Activos Asignados -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Activos Asignados</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Categoría</th>
+                                    <th>Estado</th>
+                                    <th>Ubicación</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for asset in user.asset_set.all %}
+                                <tr>
+                                    <td>{{ asset.asset_id }}</td>
+                                    <td>
+                                        <a href="{% url 'asset_detail' asset.pk %}">{{ asset.name }}</a>
+                                    </td>
+                                    <td>{{ asset.get_category_display }}</td>
+                                    <td>
+                                        <span class="badge {% if asset.status == 'new' %}bg-success{% elif asset.status == 'in_use' %}bg-primary{% elif asset.status == 'repair' %}bg-warning{% else %}bg-danger{% endif %}">
+                                            {{ asset.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ asset.location.name|default:"Sin ubicación" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No tiene activos asignados</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Historial de Movimientos -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Historial de Movimientos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Activo</th>
+                                    <th>Tipo</th>
+                                    <th>Ubicación</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for movement in user.movement_set.all|slice:":10" %}
+                                <tr>
+                                    <td>{{ movement.movement_date|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <a href="{% url 'asset_detail' movement.asset.pk %}">{{ movement.asset.name }}</a>
+                                    </td>
+                                    <td>{{ movement.get_movement_type_display }}</td>
+                                    <td>{{ movement.to_location.name }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">No hay movimientos registrados</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

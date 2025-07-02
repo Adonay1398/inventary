@@ -1,0 +1,172 @@
+{% extends 'FA01/base.html' %}
+
+{% block title %}Ubicaciones - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Ubicaciones</h1>
+        <div class="btn-group">
+            <a href="{% url 'export_locations_excel' %}" class="btn btn-success">
+                <i class="fas fa-file-excel"></i> Exportar Excel
+            </a>
+            <button type="button" class="btn btn-info text-white" data-bs-toggle="modal" data-bs-target="#importModal">
+                <i class="fas fa-file-import"></i> Importar Excel
+            </button>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newLocationModal">
+                <i class="fas fa-plus"></i> Nueva Ubicación
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for location in locations %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ location.name }}</h5>
+                    <p class="card-text">
+                        <strong>Tipo:</strong> {{ location.get_location_type_display }}<br>
+                        {% if location.description %}
+                        <strong>Descripción:</strong> {{ location.description }}
+                        {% endif %}
+                    </p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            Creado: {{ location.created_at|date:"d/m/Y" }}
+                        </small>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-sm btn-outline-primary" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#editLocationModal{{ location.id }}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                No hay ubicaciones registradas.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Modal Nueva Ubicación -->
+<div class="modal fade" id="newLocationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nueva Ubicación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'location_create' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nombre</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="location_type" class="form-label">Tipo de Ubicación</label>
+                        <select class="form-select" id="location_type" name="location_type" required>
+                            <option value="">Seleccione un tipo</option>
+                            {% for value, label in location_types %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Crear Ubicación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modales de Edición -->
+{% for location in locations %}
+<div class="modal fade" id="editLocationModal{{ location.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar Ubicación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'location_update' location.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="name{{ location.id }}" class="form-label">Nombre</label>
+                        <input type="text" class="form-control" id="name{{ location.id }}" name="name" value="{{ location.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="location_type{{ location.id }}" class="form-label">Tipo de Ubicación</label>
+                        <select class="form-select" id="location_type{{ location.id }}" name="location_type" required>
+                            {% for value, label in location_types %}
+                                <option value="{{ value }}" {% if location.location_type == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description{{ location.id }}" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="description{{ location.id }}" name="description" rows="3">{{ location.description }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importModalLabel">Importar Ubicaciones desde Excel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'import_locations_excel' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="excel_file" class="form-label">Seleccione el archivo Excel</label>
+                        <input type="file" class="form-control" id="excel_file" name="excel_file" accept=".xlsx,.xls" required>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> El archivo debe tener las siguientes columnas:
+                        <ul class="mb-0">
+                            <li><strong>Nombre:</strong> Nombre de la ubicación</li>
+                            <li><strong>Tipo de Ubicación:</strong> Almacén, Oficina, o Farmacia</li>
+                            <li><strong>Descripción:</strong> Descripción opcional de la ubicación</li>
+                        </ul>
+                    </div>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        <strong>Nota:</strong> Si una ubicación con el mismo nombre ya existe, será actualizada con los nuevos datos.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Importar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

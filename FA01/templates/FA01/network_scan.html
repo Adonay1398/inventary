@@ -1,0 +1,39 @@
+{% extends 'FA01/base.html' %}
+{% block title %}Escaneo de Red{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Escaneo de Red</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="network" class="form-label">Rango de red (ej: 192.168.1.0/24):</label>
+            <input type="text" class="form-control" id="network" name="network" value="{{ request.POST.network|default:'192.168.1.0/24' }}">
+        </div>
+        <button type="submit" class="btn btn-primary">Escanear</button>
+    </form>
+    {% if error %}
+        <div class="alert alert-danger mt-3">{{ error }}</div>
+    {% endif %}
+    {% if devices %}
+        <h3 class="mt-4">Dispositivos encontrados:</h3>
+        <table class="table table-bordered table-striped mt-2">
+            <thead>
+                <tr>
+                    <th>IP</th>
+                    <th>MAC</th>
+                    <th>Hostname</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in devices %}
+                <tr>
+                    <td>{{ d.ip }}</td>
+                    <td>{{ d.mac }}</td>
+                    <td>{{ d.hostname }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</div>
+{% endblock %} 

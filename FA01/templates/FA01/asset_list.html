@@ -1,0 +1,174 @@
+{% extends 'FA01/base.html' %}
+
+{% block title %}Activos - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Activos</h1>
+        <div class="btn-group">
+            <a href="{% url 'asset_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nuevo Activo
+            </a>
+            <a href="{% url 'export_assets_excel' %}" class="btn btn-success">
+                <i class="fas fa-file-excel"></i> Exportar Excel
+            </a>
+            <button type="button" class="btn btn-info text-white" data-bs-toggle="modal" data-bs-target="#importModal">
+                <i class="fas fa-file-import"></i> Importar Excel
+            </button>
+        </div>
+    </div>
+
+    <!-- Import Modal -->
+    <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importModalLabel">Importar Activos desde Excel</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" action="{% url 'import_assets_excel' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="excel_file" class="form-label">Seleccione el archivo Excel</label>
+                            <input type="file" class="form-control" id="excel_file" name="excel_file" accept=".xlsx,.xls" required>
+                        </div>
+                        <div class="mb-3">
+                            <a href="{% url 'export_assets_template' %}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-download"></i> Descargar Plantilla
+                            </a>
+                        </div>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> El archivo debe tener las siguientes columnas en este orden:
+                            <ul class="mb-0">
+                                <li><strong>Columna A:</strong> ID (opcional, se ignora)</li>
+                                <li><strong>Columna B:</strong> Nombre (obligatorio)</li>
+                                <li><strong>Columna C:</strong> Categoría (PC, Laptop, Monitor, Nobreak, Impresora, Equipo de Red, Periférico, Servidor, Otro)</li>
+                                <li><strong>Columna D:</strong> Número de Serie (obligatorio)</li>
+                                <li><strong>Columna E:</strong> Fecha de Compra (formato: DD/MM/YYYY, YYYY-MM-DD, etc.)</li>
+                                <li><strong>Columna F:</strong> Estado (Activo, En Uso, En Mantenimiento, En Reparación, Retirado, Perdido)</li>
+                                <li><strong>Columna G:</strong> Ubicación (se creará automáticamente si no existe)</li>
+                                <li><strong>Columna H:</strong> Responsable (nombre completo de la persona responsable)</li>
+                                <li><strong>Columna I:</strong> Descripción (opcional)</li>
+                                <li><strong>Columna J:</strong> Especificaciones (opcional)</li>
+                                <li><strong>Columna K:</strong> Cantidad (opcional, por defecto 1)</li>
+                                <li><strong>Columna L:</strong> Período de Uso Preferente en meses (opcional, por defecto 36)</li>
+                                <li><strong>Columna M:</strong> Vencimiento de Garantía (formato: DD/MM/YYYY, YYYY-MM-DD, etc.)</li>
+                            </ul>
+                        </div>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            <strong>Nota:</strong> Si un activo con el mismo número de serie ya existe, será actualizado con los nuevos datos.
+                        </div>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> 
+                            <strong>Ubicaciones y Responsables:</strong> Las ubicaciones se crearán automáticamente si no existen. 
+                            Los responsables se guardan como texto y no necesitan ser usuarios del sistema.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Importar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" name="q" class="form-control" placeholder="Buscar por nombre, ID o serial..." value="{{ request.GET.q }}">
+                </div>
+                <div class="col-md-3">
+                    <select name="category" class="form-select">
+                        <option value="">Todas las categorías</option>
+                        {% for value, label in categories %}
+                            <option value="{{ value }}" {% if request.GET.category == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="status" class="form-select">
+                        <option value="">Todos los estados</option>
+                        {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="location" class="form-select">
+                        <option value="">Todas las sucursales</option>
+                        {% for loc in locations %}
+                            <option value="{{ loc.id }}" {% if request.GET.location == loc.id|stringformat:'s' %}selected{% endif %}>{{ loc.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Activos -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Categoría</th>
+                            <th>Estado</th>
+                            <th>Ubicación</th>
+                            <th>Responsable</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for asset in assets %}
+                        <tr>
+                            <td>{{ asset.asset_id }}</td>
+                            <td>{{ asset.name }}</td>
+                            <td>{{ asset.get_category_display }}</td>
+                            <td>
+                                <span class="badge {% if asset.status == 'new' %}bg-success{% elif asset.status == 'in_use' %}bg-primary{% elif asset.status == 'repair' %}bg-warning{% else %}bg-danger{% endif %}">
+                                    {{ asset.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ asset.location.name|default:"Sin ubicación" }}</td>
+                            <td>
+                                {% if asset.assigned_to_name %}
+                                    {{ asset.assigned_to_name }}
+                                {% elif asset.assigned_to %}
+                                    {{ asset.assigned_to.username }}
+                                {% else %}
+                                    Sin asignar
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'asset_detail' asset.pk %}" class="btn btn-sm btn-info text-white">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'asset_update' asset.pk %}" class="btn btn-sm btn-warning">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">No se encontraron activos</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

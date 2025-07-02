@@ -1,0 +1,305 @@
+{% extends 'FA01/base.html' %}
+
+{% block title %}
+    {% if asset %}Editar {{ asset.name }}{% else %}Nuevo Activo{% endif %} - Sistema de Inventario
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        {% if asset %}
+                            Editar Activo: {{ asset.name }}
+                        {% else %}
+                            Nuevo Activo
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                      <div>
+                        {% for message in messages %}
+                          <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <!-- <div class="col-md-6">
+                                <label for="asset_id" class="form-label">ID del Activo</label>
+                                <input type="text" class="form-control" id="asset_id" name="asset_id" value="{{ asset.asset_id|default:'' }}" required>
+                            </div> -->
+                            <div class="col-md-6">
+                                <label for="name" class="form-label">Nombre del Equipo</label>
+                                <input type="text" class="form-control" id="name" name="name" value="{{ asset.name|default:'' }}" required>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="category" class="form-label">Categoría</label>
+                                <select class="form-select" id="category" name="category">
+                                    <option value="">Seleccione una categoría</option>
+                                    {% for value, label in categories %}
+                                        <option value="{{ value }}" {% if asset.category == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="brand" class="form-label">Marca</label>
+                                <input type="text" class="form-control" id="brand" name="brand" value="{{ asset.brand|default:'' }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="model" class="form-label">Modelo</label>
+                                <input type="text" class="form-control" id="model" name="model" value="{{ asset.model|default:'' }}">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="serial_number" class="form-label">Número de Serie</label>
+                                <input type="text" class="form-control" id="serial_number" name="serial_number" value="{{ asset.serial_number|default:'' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="quantity" class="form-label">Cantidad</label>
+                                <input type="number" class="form-control" id="quantity" name="quantity" value="{{ asset.quantity|default:'1' }}" min="1">
+                                <small class="text-muted">Número de unidades similares</small>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="status" class="form-label">Estado</label>
+                                <select class="form-select" id="status" name="status">
+                                    {% for value, label in status_choices %}
+                                        <option value="{{ value }}" {% if asset.status == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="purchase_date" class="form-label">Fecha de Compra</label>
+                                <input type="date" class="form-control" id="purchase_date" name="purchase_date" value="{{ asset.purchase_date|date:'Y-m-d'|default:'' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="preferred_usage_period" class="form-label">Período de Uso Preferente (meses)</label>
+                                <input type="number" class="form-control" id="preferred_usage_period" name="preferred_usage_period" value="{{ asset.preferred_usage_period|default:'36' }}" min="1">
+                                <small class="text-muted">Tiempo recomendado de uso en meses</small>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="warranty_expiration" class="form-label">Vencimiento de Garantía</label>
+                                <input type="date" class="form-control" id="warranty_expiration" name="warranty_expiration" value="{{ asset.warranty_expiration|date:'Y-m-d'|default:'' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="location" class="form-label">Ubicación</label>
+                                <select class="form-select" id="location" name="location">
+                                    <option value="">Seleccione una ubicación</option>
+                                    {% for location in locations %}
+                                        <option value="{{ location.id }}" {% if asset.location_id == location.id %}selected{% endif %}>{{ location.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="assigned_to_name" class="form-label">Responsable</label>
+                                <input type="text" class="form-control" id="assigned_to_name" name="assigned_to_name" value="{{ asset.assigned_to_name|default:'' }}" placeholder="Nombre del responsable">
+                                <small class="text-muted">Nombre completo de la persona responsable</small>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label for="images" class="form-label">Fotos del Activo <small class="text-muted">(Opcional)</small></label>
+                                <div class="input-group">
+                                    <input type="file" class="form-control" id="images" name="images" accept="image/*" multiple>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('camera').click()">
+                                        <i class="fas fa-camera"></i> Cámara
+                                    </button>
+                                </div>
+                                <input type="file" id="camera" name="images" accept="image/*" capture="environment" multiple style="display: none;">
+                                <small class="text-muted">Puedes seleccionar múltiples imágenes desde archivos o tomar fotos con la cámara</small>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label for="responsibility" class="form-label">Fotos de la responsiva <small class="text-muted">(Opcional)</small></label>
+                                <div class="input-group">
+                                    <input type="file" class="form-control" id="responsibility" name="responsibility" accept="image/*" multiple>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('camera_responsibility').click()">
+                                        <i class="fas fa-camera"></i> Cámara
+                                    </button>
+                                </div>
+                                <input type="file" id="camera_responsibility" name="responsibility" accept="image/*" capture="environment" multiple style="display: none;">
+                                <small class="text-muted">Puedes seleccionar múltiples imágenes desde archivos o tomar fotos con la cámara</small>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="specifications" class="form-label">Especificaciones</label>
+                                <textarea class="form-control" id="specifications" name="specifications" rows="4">{{ asset.specifications|default:'' }}</textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="description" class="form-label">Descripción</label>
+                                <textarea class="form-control" id="description" name="description" rows="4">{{ asset.description|default:'' }}</textarea>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Observaciones</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3">{{ asset.notes|default:'' }}</textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'asset_list' %}" class="btn btn-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">
+                                {% if asset %}Guardar Cambios{% else %}Crear Activo{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mostrar imágenes existentes si estamos editando -->
+{% if asset and asset.images.all %}
+<div class="row mb-3">
+    <div class="col-12">
+        <label class="form-label">Imágenes actuales:</label>
+        <div class="row">
+            {% for asset_image in asset.images.all %}
+            <div class="col-md-3 mb-2">
+                <div class="card">
+                    <img src="{{ asset_image.image.url }}" class="card-img-top" alt="Imagen {{ forloop.counter }}" style="height: 150px; object-fit: cover;">
+                    <div class="card-body p-2">
+                        <small class="text-muted">{{ asset_image.uploaded_at|date:"d/m/Y H:i" }}</small>
+                    </div>
+                </div>
+                <form method="post" action="{% url 'delete_asset_image' asset_image.id %}" class="mt-2" onsubmit="return confirm('¿Estás seguro de que quieres eliminar esta imagen?')">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-sm w-100">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+{% if asset and asset.letter_responsibilities.all %}
+<div class="row mb-3">
+    <div class="col-12">
+        <label class="form-label">Responsivas actuales:</label>
+        <div class="row">
+            {% for asset_responsibility in asset.letter_responsibilities.all %}
+            <div class="col-md-3 mb-2">
+                <div class="card">
+                    <img src="{{ asset_responsibility.letter_responsibility.url }}" class="card-img-top" alt="Imagen_letter_responsibility {{ forloop.counter }}" style="height: 150px; object-fit: cover;">
+                    <div class="card-body p-2">
+                        <small class="text-muted">{{ asset_responsibility.uploaded_at|date:"d/m/Y H:i" }}</small>
+                    </div>
+                </div>
+                <form method="post" action="{% url 'delete_asset_letter_responsibility' asset_responsibility.id %}" class="mt-2" onsubmit="return confirm('¿Estás seguro de que quieres eliminar esta imagen?')">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-sm w-100">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+// Función para manejar la selección de archivos de la cámara
+document.getElementById('camera').addEventListener('change', function(e) {
+    if (e.target.files.length > 0) {
+        // Transferir archivos seleccionados al campo principal
+        const mainInput = document.getElementById('images');
+        const dt = new DataTransfer();
+        
+        // Agregar archivos existentes del campo principal
+        for (let i = 0; i < mainInput.files.length; i++) {
+            dt.items.add(mainInput.files[i]);
+        }
+        
+        // Agregar archivos de la cámara
+        for (let i = 0; i < e.target.files.length; i++) {
+            dt.items.add(e.target.files[i]);
+        }
+        
+        mainInput.files = dt.files;
+        
+        // Limpiar el campo de la cámara
+        e.target.value = '';
+    }
+});
+
+// Función para manejar la selección de archivos de la cámara de responsiva
+document.getElementById('camera_responsibility').addEventListener('change', function(e) {
+    if (e.target.files.length > 0) {
+        // Transferir archivos seleccionados al campo principal de responsiva
+        const mainInput = document.getElementById('responsibility');
+        const dt = new DataTransfer();
+        
+        // Agregar archivos existentes del campo principal
+        for (let i = 0; i < mainInput.files.length; i++) {
+            dt.items.add(mainInput.files[i]);
+        }
+        
+        // Agregar archivos de la cámara
+        for (let i = 0; i < e.target.files.length; i++) {
+            dt.items.add(e.target.files[i]);
+        }
+        
+        mainInput.files = dt.files;
+        
+        // Limpiar el campo de la cámara
+        e.target.value = '';
+    }
+});
+
+// Debug: Verificar que el formulario se envíe
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const submitButton = document.querySelector('input[type="submit"]');
+    
+    console.log('Formulario encontrado:', form);
+    console.log('Botón de envío encontrado:', submitButton);
+    console.log('Botón deshabilitado:', submitButton.disabled);
+    console.log('Botón visible:', submitButton.offsetParent !== null);
+    console.log('Botón en pantalla:', submitButton.getBoundingClientRect());
+    
+    form.addEventListener('submit', function(e) {
+        console.log('Formulario enviándose...');
+        console.log('Datos del formulario:', new FormData(form));
+    });
+    
+    submitButton.addEventListener('click', function(e) {
+        console.log('Botón de guardar clickeado');
+        console.log('Evento de clic:', e);
+    });
+    
+    // También agregar listener al mousedown para ver si responde
+    submitButton.addEventListener('mousedown', function(e) {
+        console.log('Botón mousedown detectado');
+    });
+});
+</script>
+{% endblock %} 

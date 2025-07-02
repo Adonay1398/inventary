@@ -1,0 +1,69 @@
+{% extends 'FA01/base.html' %}
+
+{% block title %}Registrar Movimiento - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Registrar Movimiento</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="asset" class="form-label">Activo</label>
+                            <select class="form-select" id="asset" name="asset" required>
+                                <option value="">Seleccione un activo</option>
+                                {% for asset in assets %}
+                                    <option value="{{ asset.id }}" {% if request.GET.asset == asset.id|stringformat:"i" %}selected{% endif %}>
+                                        {{ asset.asset_id }} - {{ asset.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="movement_type" class="form-label">Tipo de Movimiento</label>
+                            <select class="form-select" id="movement_type" name="movement_type" required>
+                                <option value="">Seleccione el tipo de movimiento</option>
+                                {% for value, label in movement_types %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="to_location" class="form-label">Nueva Ubicación</label>
+                            <select class="form-select" id="to_location" name="to_location" required>
+                                <option value="">Seleccione la nueva ubicación</option>
+                                {% for location in locations %}
+                                    <option value="{{ location.id }}">{{ location.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="reason" class="form-label">Motivo del Movimiento</label>
+                            <textarea class="form-control" id="reason" name="reason" rows="3" required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="assigned_to_name" class="form-label">Asignar a (nombre del responsable)</label>
+                            <input type="text" class="form-control" id="assigned_to_name" name="assigned_to_name" placeholder="Nombre completo de la persona">
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'asset_list' %}" class="btn btn-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">Registrar Movimiento</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,155 @@
+{% extends 'FA01/base.html' %}
+
+{% block title %}{{ asset.name }} - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Detalles del Activo</h5>
+                    <div>
+                        <a href="{% url 'asset_update' asset.pk %}" class="btn btn-warning btn-sm">
+                            <i class="fas fa-edit"></i> Editar
+                        </a>
+                        <a href="{% url 'asset_list' %}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Volver
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">ID del Activo:</div>
+                        <div class="col-md-8">{{ asset.asset_id }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Nombre:</div>
+                        <div class="col-md-8">{{ asset.name }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Categoría:</div>
+                        <div class="col-md-8">{{ asset.get_category_display }}</div>
+                    </div>
+                    {% if asset.brand %}
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Marca:</div>
+                        <div class="col-md-8">{{ asset.brand }}</div>
+                    </div>
+                    {% endif %}
+                    {% if asset.model %}
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Modelo:</div>
+                        <div class="col-md-8">{{ asset.model }}</div>
+                    </div>
+                    {% endif %}
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Número de Serie:</div>
+                        <div class="col-md-8">{{ asset.serial_number }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Fecha de Compra:</div>
+                        <div class="col-md-8">{{ asset.purchase_date|date:"d/m/Y" }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Estado:</div>
+                        <div class="col-md-8">
+                            <span class="badge {% if asset.status == 'active' %}bg-success{% elif asset.status == 'maintenance' %}bg-warning{% elif asset.status == 'retired' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                {{ asset.get_status_display }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Ubicación:</div>
+                        <div class="col-md-8">{{ asset.location.name|default:"Sin ubicación" }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Responsable:</div>
+                        <div class="col-md-8">
+                            {% if asset.assigned_to_name %}
+                                {{ asset.assigned_to_name }}
+                            {% elif asset.assigned_to %}
+                                {{ asset.assigned_to.username }}
+                            {% else %}
+                                Sin asignar
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Especificaciones Técnicas -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Especificaciones Técnicas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Descripción:</div>
+                        <div class="col-md-8">{{ asset.description|default:"Sin descripción" }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Especificaciones:</div>
+                        <div class="col-md-8">{{ asset.specifications|default:"Sin especificaciones"|linebreaks }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Observaciones:</div>
+                        <div class="col-md-8">{{asset.notes|default:"Sin Observaciones"}}</div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Cantidad:</div>
+                        <div class="col-md-8"> {{ asset.quantity|default:"N/A" }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Vencimiento de Garantía:</div>
+                        <div class="col-md-8">{{ asset.warranty_expiration|date:"d/m/Y"|default:"Sin fecha de vencimiento" }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Imagen del Activo -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Fotos del Activo</h5>
+                </div>
+                <div class="card-body">
+                    {% if asset.images.all %}
+                        <div class="row">
+                            {% for asset_image in asset.images.all %}
+                            <div class="col-12 mb-3">
+                                <img src="{{ asset_image.image.url }}" alt="{{ asset.name }} - Imagen {{ forloop.counter }}" class="img-fluid rounded">
+                                <small class="text-muted d-block mt-1">Subida: {{ asset_image.uploaded_at|date:"d/m/Y H:i" }}</small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-muted text-center">
+                            <i class="fas fa-image fa-3x mb-3"></i>
+                            <p>No hay imágenes disponibles</p>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <h6 class="card-title mb-2">Responsivas</h6>
+                    {% if asset.letter_responsibilities.all %}
+                        <div class="row">
+                            {% for asset_responsibility in asset.letter_responsibilities.all %}
+                            <div class="col-12 mb-3">
+                                <img src="{{ asset_responsibility.letter_responsibility.url }}" alt="{{ asset.name }} - Responsiva {{ forloop.counter }}" class="img-fluid rounded">
+                                <small class="text-muted d-block mt-1">Subida: {{ asset_responsibility.uploaded_at|date:"d/m/Y H:i" }}</small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-muted text-center">
+                            <i class="fas fa-image fa-3x mb-3"></i>
+                            <p>No hay responsivas disponibles</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

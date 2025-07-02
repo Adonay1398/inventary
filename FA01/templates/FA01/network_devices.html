@@ -1,0 +1,156 @@
+{% extends 'FA01/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Dispositivos en la Red</h2>
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> Se han encontrado {{ devices|length }} dispositivos en la red.
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>IP</th>
+                    <th>Nombre</th>
+                    <th>MAC</th>
+                    <th>Fabricante</th>
+                    <th>Tipo</th>
+                    <th>Sistema Operativo</th>
+                    <th>Modelo</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for device in devices %}
+                <tr>
+                    <td>{{ device.ip }}</td>
+                    <td>{{ device.hostname }}</td>
+                    <td>{{ device.mac }}</td>
+                    <td>{{ device.vendor }}</td>
+                    <td>{{ device.type }}</td>
+                    <td>{{ device.os }}</td>
+                    <td>{{ device.model }}</td>
+                    <td>
+                        <span class="badge bg-success">{{ device.status }}</span>
+                    </td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" 
+                                onclick="addToInventory('{{ device.ip }}', '{{ device.hostname }}', '{{ device.type }}', '{{ device.vendor }}', '{{ device.model }}')">
+                            <i class="fas fa-plus"></i> Agregar
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal para agregar a inventario -->
+<div class="modal fade" id="addToInventoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Agregar a Inventario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addToInventoryForm">
+                    <input type="hidden" id="deviceIp" name="ip">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre del Host</label>
+                        <input type="text" class="form-control" id="deviceHostname" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tipo de Dispositivo</label>
+                        <input type="text" class="form-control" id="deviceType" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Fabricante</label>
+                        <input type="text" class="form-control" id="deviceVendor" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Modelo</label>
+                        <input type="text" class="form-control" id="deviceModel" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Ubicación</label>
+                        <input type="text" class="form-control" name="location" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Departamento</label>
+                        <input type="text" class="form-control" name="department" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notas</label>
+                        <textarea class="form-control" name="notes"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="submitToInventory()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function addToInventory(ip, hostname, type, vendor, model) {
+    document.getElementById('deviceIp').value = ip;
+    document.getElementById('deviceHostname').value = hostname;
+    document.getElementById('deviceType').value = type;
+    document.getElementById('deviceVendor').value = vendor;
+    document.getElementById('deviceModel').value = model;
+    
+    new bootstrap.Modal(document.getElementById('addToInventoryModal')).show();
+}
+
+function submitToInventory() {
+    const form = document.getElementById('addToInventoryForm');
+    const formData = new FormData(form);
+    
+    fetch('{% url "add_network_device" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Dispositivo agregado al inventario exitosamente');
+            bootstrap.Modal.getInstance(document.getElementById('addToInventoryModal')).hide();
+        } else {
+            alert('Error al agregar el dispositivo: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error al procesar la solicitud');
+        console.error('Error:', error);
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %} 
