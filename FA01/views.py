@@ -168,7 +168,7 @@ def asset_create(request):
                     from_location=None,
                     to_location=asset.location,
                     from_user=None,
-                    to_user=asset.assigned_to,
+                    assigned_to_name=asset.assigned_to.username if asset.assigned_to else None,
                     notes='Registro inicial del activo'
                 )
             
@@ -237,7 +237,7 @@ def asset_update(request, pk):
                         from_location=old_location,
                         to_location=new_location,
                         from_user=asset.assigned_to,
-                        to_user=asset.assigned_to,
+                        assigned_to_name=asset.assigned_to.username if asset.assigned_to else None,
                         notes='Cambio de ubicación'
                     )
             else:
@@ -255,7 +255,7 @@ def asset_update(request, pk):
                         from_location=asset.location,
                         to_location=asset.location,
                         from_user=old_assigned_to,
-                        to_user=new_assigned_to,
+                        assigned_to_name=new_assigned_to.username if new_assigned_to else None,
                         notes='Cambio de responsable'
                     )
             else:
